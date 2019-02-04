@@ -61,7 +61,7 @@ data Cmd
     deriving (Eq,Show)
 
 ex1 :: Prog
-ex1 = [Pen Up, Move (Lit 0,Lit 0), Pen Down, Move (Lit 2, Lit 2), nix, line]
+ex1 = [Pen Up, Move (Lit 0,Lit 0), Pen Down, Move (Lit 2, Lit 2), nix, line, ex3]
 
 -- 2. Part 1, Concrete Syntax
 
@@ -136,6 +136,9 @@ ex2 = Add (Add (Lit 2) (Lit 3)) (Ref "x")
 b :: Expr
 b = Add (Add (Lit 2) (Lit 3)) (Add (Lit 3) (Ref "x2"))
 
+ex3 :: Cmd
+ex3 = Move(ex2,(Lit 2))
+
 optE :: Expr -> Expr
 optE (Add (Lit num) (Lit num2)) = Lit (num + num2)
 optE (Add arg1 arg2) = Add (optE arg1) (optE arg2)
@@ -143,5 +146,14 @@ optE (Ref myStr) = Ref myStr
 optE (Lit num) = Lit num
 
 -- Define a Haskell function optP :: Prog -> Prog that optimizes all of the expressions contained in a given program using optE.
--- optP :: Prog -> Prog
--- optP ()
+
+cmdEval :: Cmd -> Cmd
+cmdEval (Move(expr1,expr2)) = Move ((optE expr1),(optE expr2))
+cmdEval (Define mName params commands) = Define mName params (optP commands)
+cmdEval (Call cName params) = Call cName (map optE params)
+cmdEval myCmd = myCmd
+
+
+optP :: Prog -> Prog
+optP [] = []
+optP (a:b) = [(cmdEval a)] ++ (optP b)
